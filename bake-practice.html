@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>제과제빵 실기 연습 타이머</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E8ECEE; --paper:#FBFBF8; --ink:#1D2327; --muted:#5B656C; --line:#D2D8DC;
+  --crust:#A5570F; --crust-soft:#F4E4CF; --alarm:#C22F28; --alarm-soft:#F8DEDC; --ok:#2E6A4E; --ok-soft:#DCEDE3;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#141819; --paper:#1E2326; --ink:#ECEFF0; --muted:#9BA4AA; --line:#2E3539;
+    --crust:#E39445; --crust-soft:#3A2A1A; --alarm:#F2665F; --alarm-soft:#3D1F1D; --ok:#72C39B; --ok-soft:#1D3328;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141819; --paper:#1E2326; --ink:#ECEFF0; --muted:#9BA4AA; --line:#2E3539;
+  --crust:#E39445; --crust-soft:#3A2A1A; --alarm:#F2665F; --alarm-soft:#3D1F1D; --ok:#72C39B; --ok-soft:#1D3328;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+*,*::before,*::after{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"IBM Plex Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  font-size:16px;line-height:1.55;-webkit-tap-highlight-color:transparent;}
+.wrap{max-width:560px;margin:0 auto;padding:16px 16px 40px;}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 18px;}
+header.top h1{font-size:1.05rem;margin:0;font-weight:700;letter-spacing:-.01em;}
+nav.tabs{display:flex;gap:4px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:3px;}
+nav.tabs button{border:0;background:transparent;color:var(--muted);font:inherit;font-size:.9rem;padding:6px 14px;border-radius:999px;cursor:pointer;}
+nav.tabs button[aria-current="true"]{background:var(--ink);color:var(--paper);}
+button{font:inherit;}
+button:focus-visible,input:focus-visible,textarea:focus-visible,label:focus-within{outline:2px solid var(--crust);outline-offset:2px;}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--paper);margin-bottom:14px;}
+.seg button{border:0;background:transparent;padding:12px;font-weight:500;color:var(--muted);cursor:pointer;}
+.seg button[aria-pressed="true"]{background:var(--crust-soft);color:var(--crust);font-weight:700;}
+.draw{width:100%;border:0;border-radius:18px;background:var(--crust);color:#fff;padding:22px 18px;text-align:left;cursor:pointer;display:block;}
+.draw strong{display:block;font-size:1.35rem;letter-spacing:-.02em;}
+.draw span{opacity:.85;font-size:.9rem;}
+.opt{display:flex;align-items:center;gap:8px;margin:10px 2px 22px;color:var(--muted);font-size:.9rem;}
+.opt input{width:18px;height:18px;accent-color:var(--crust);}
+h2{font-size:.95rem;color:var(--muted);font-weight:500;margin:0 0 8px;}
+.list{background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;border:0;background:transparent;color:inherit;text-align:left;padding:13px 14px;border-top:1px solid var(--line);cursor:pointer;}
+.row:first-child{border-top:0;}
+.row .nm{font-weight:500;}
+.row .mt{font-size:.8rem;color:var(--muted);}
+.row .right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.dots{display:inline-flex;gap:3px;}
+.dots i{width:7px;height:7px;border-radius:50%;background:var(--line);display:block;}
+.dots i.on{background:var(--crust);}
+.cnt{font-size:.78rem;color:var(--muted);min-width:34px;text-align:right;}
+.cnt.zero{color:var(--alarm);}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px;}
+.item-title{font-size:1.9rem;font-weight:700;letter-spacing:-.03em;line-height:1.2;margin:0 0 6px;}
+.meta{color:var(--muted);font-size:.9rem;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+ul.tips{margin:10px 0 0;padding-left:1.1em;}
+ul.tips li{margin:4px 0;}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.field label{display:block;font-size:.82rem;color:var(--muted);margin-bottom:4px;}
+.field input{width:100%;font:inherit;font-size:1.2rem;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font-variant-numeric:tabular-nums;}
+.note{font-size:.82rem;color:var(--muted);margin:10px 0 0;}
+.btn{display:block;width:100%;border:0;border-radius:14px;padding:16px;font-weight:700;font-size:1.05rem;cursor:pointer;}
+.btn.primary{background:var(--ink);color:var(--paper);}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);font-weight:500;}
+.btn.danger{background:transparent;color:var(--alarm);border:1px solid var(--line);font-weight:500;}
+.btns{display:grid;gap:8px;margin-top:12px;}
+.btns.two{grid-template-columns:1fr 1fr;}
+/* 실행 화면 */
+.dialbox{position:relative;width:min(78vw,300px);aspect-ratio:1;margin:4px auto 6px;}
+.dialbox svg{width:100%;height:100%;transform:rotate(-90deg);}
+.dial-bg{stroke:var(--line);}
+.dial-fg{stroke:var(--crust);transition:stroke-dashoffset .25s linear;}
+.over .dial-fg{stroke:var(--alarm);}
+.dial-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;}
+.dial-time{font-size:clamp(2.6rem,13vw,3.6rem);font-weight:700;letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:1;}
+.over .dial-time{color:var(--alarm);}
+.dial-sub{font-size:.85rem;color:var(--muted);margin-top:6px;}
+.run-name{text-align:center;font-weight:700;font-size:1.15rem;margin:0;}
+.paused-flag{text-align:center;color:var(--crust);font-weight:700;margin:4px 0 0;}
+.weigh{display:flex;justify-content:space-between;align-items:center;background:var(--crust-soft);color:var(--crust);border-radius:12px;padding:10px 14px;margin:12px 0;font-weight:500;}
+.weigh.late{background:var(--alarm-soft);color:var(--alarm);}
+.weigh b{font-variant-numeric:tabular-nums;font-size:1.3rem;}
+ol.steps{list-style:none;margin:0;padding:0;counter-reset:s;}
+ol.steps li{display:grid;grid-template-columns:26px 1fr;column-gap:12px;align-items:center;padding:11px 12px;border-top:1px solid var(--line);}
+ol.steps li:first-child{border-top:0;}
+ol.steps li::before{counter-increment:s;content:counter(s);flex:0 0 26px;height:26px;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:.78rem;color:var(--muted);}
+ol.steps li.done{color:var(--muted);}
+ol.steps li.done::before{content:"✓";background:var(--ok-soft);color:var(--ok);border-color:transparent;}
+ol.steps li.cur{background:var(--crust-soft);}
+ol.steps li.cur::before{background:var(--crust);color:#fff;border-color:transparent;}
+ol.steps .sn{flex:1;}
+.sh{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;border:0;background:transparent;color:inherit;text-align:left;padding:0;cursor:pointer;font:inherit;}
+.sh .chev{font-size:.75rem;color:var(--muted);transition:transform .15s;}
+.sh[aria-expanded="true"] .chev{transform:rotate(90deg);}
+.sd{grid-column:2;margin-top:8px;font-size:.9rem;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;}
+.sd ul{margin:0;padding-left:1.1em;}
+.sd li{display:list-item;padding:2px 0;border:0;}
+.sd li::before{content:none;}
+.sd .sub{font-size:.8rem;color:var(--muted);margin:8px 0 4px;}
+.wlist label{display:flex;align-items:center;gap:10px;padding:5px 0;}
+.wlist input{width:20px;height:20px;accent-color:var(--ok);flex-shrink:0;}
+.wlist .amt{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:700;}
+.wlist label.got{color:var(--muted);text-decoration:line-through;}
+.bjcalc{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px;}
+.bjcalc input{width:100%;font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-variant-numeric:tabular-nums;}
+.bjcalc span{font-size:.72rem;color:var(--muted);display:block;margin-bottom:2px;}
+.bjout{margin-top:6px;font-weight:700;font-variant-numeric:tabular-nums;}
+.recipe textarea{min-height:140px;}
+ol.steps li.cur .sn{font-weight:700;}
+ol.steps .st{font-size:.8rem;font-variant-numeric:tabular-nums;color:var(--muted);}
+.stepbtn{position:sticky;bottom:calc(10px + env(safe-area-inset-bottom,0px));margin-top:12px;box-shadow:0 6px 18px rgba(0,0,0,.18);background:var(--crust);color:#fff;}
+details{margin-top:4px;}
+summary{cursor:pointer;color:var(--muted);font-size:.9rem;padding:4px 0;}
+/* 결과 */
+.bigstat{font-size:2.4rem;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.1;}
+.bigstat.over{color:var(--alarm);}
+.bars .b{display:grid;grid-template-columns:1fr auto;gap:2px 10px;margin:8px 0;font-size:.88rem;}
+.bars .track{grid-column:1/-1;height:6px;background:var(--line);border-radius:3px;overflow:hidden;}
+.bars .fill{height:100%;background:var(--crust);}
+.checks label{display:flex;align-items:center;gap:10px;padding:8px 0;}
+.checks input{width:20px;height:20px;accent-color:var(--ok);}
+textarea{width:100%;min-height:80px;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);resize:vertical;}
+.hist .row{cursor:default;align-items:flex-start;flex-direction:column;gap:2px;}
+.hist .l1{display:flex;justify-content:space-between;width:100%;gap:10px;}
+.hist .memo{font-size:.85rem;color:var(--muted);white-space:pre-wrap;}
+.pill{font-size:.75rem;padding:2px 8px;border-radius:999px;background:var(--ok-soft);color:var(--ok);}
+.pill.bad{background:var(--alarm-soft);color:var(--alarm);}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px;}
+.grid div{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:.82rem;}
+.grid div b{display:block;font-size:1.1rem;font-variant-numeric:tabular-nums;}
+.grid div.zero b{color:var(--alarm);}
+.shuffle{font-size:1.9rem;font-weight:700;text-align:center;padding:60px 0;letter-spacing:-.03em;color:var(--crust);}
+.empty{padding:28px 16px;text-align:center;color:var(--muted);}
+@media (prefers-reduced-motion:reduce){.dial-fg{transition:none;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>실기 연습 타이머</h1>
+    <nav class="tabs" id="tabs">
+      <button data-tab="home">연습</button>
+      <button data-tab="history">기록</button>
+    </nav>
+  </header>
+  <main id="app"></main>
+</div>
+<script>
+(function(){
+const W='재료 계량', END=['제출','정리·청소'];
+const PREP='틀·유산지 준비, 오븐 예열';
+const P=(id,name,m,d,steps,tips)=>({id,name,m,d,steps,tips});
+
+const PASTRY=[
+P('pound','파운드케이크','크림법',3,[W,PREP,'버터 풀고 설탕·소금 넣어 크림화','계란 조금씩 넣으며 크림화','가루 섞기','비중 측정·기록','팬닝','굽기 (껍질 생기면 가운데 칼집)',...END],
+ ['반죽기 사용이 허용되는 품목','굽다가 껍질이 생길 때 가운데를 갈라 줘야 모양이 잡혀']),
+P('brownie','브라우니','1단계 변형 반죽법',1,[W,'원형 유산지 재단, 오븐 예열','견과류 미리 굽기','초콜릿·버터 중탕으로 녹이기','계란·설탕 섞기','초콜릿 혼합 후 가루 섞기','견과류 넣고 빠르게 팬닝','굽기',...END],
+ ['초콜릿 온도가 너무 높지 않게 관리','마지막 팬닝이 늦으면 반죽이 굳어버려','견과류 전처리 잊지 말기']),
+P('fruit','과일케이크','크림법 + 별립법',4,[W,PREP,'과일·견과 전처리 (체리 썰고 물기 제거)','버터 크림화, 노른자 넣기','흰자 머랭 만들기','머랭·가루·과일 섞기','팬닝','굽기',...END],
+ ['체리 물기를 충분히 빼야 반죽이 붉게 물들지 않아','잘랐을 때 과일이 고르게 퍼져 있어야 감점이 적어','본반죽이 되직해서 머랭 섞기가 까다로워']),
+P('spongeA','버터스펀지케이크 (공립법)','공립법',3,[W,PREP,'전란·설탕 중탕하며 휘핑 (과열 주의)','가루 섞기','녹인 버터 섞기','비중 측정·기록','팬닝','굽기',...END],
+ ['중탕할 때 계란이 익지 않게 온도계로 확인','가루를 너무 세게 섞으면 거품이 꺼지고 비중은 되돌릴 수 없어']),
+P('spongeB','버터스펀지케이크 (별립법)','별립법',3,[W,PREP,'노른자 반죽 만들기','흰자 머랭 만들기','머랭·가루 나눠 섞기','녹인 버터 섞기','비중 측정·기록','팬닝','굽기',...END],
+ ['계란 분리할 때 노른자가 섞이지 않게','머랭 덩어리가 남으면 속에 기포 구멍이 생겨']),
+P('jelly','젤리롤케이크','공립법',3,[W,PREP,'전란·설탕 중탕하며 휘핑','가루 섞기','비중 측정·기록','팬닝','굽기','시트에 잼 바르기','말기',...END],
+ ['말 때 시트가 터지면 감점','유산지 떼는 과정도 조심']),
+P('softroll','소프트롤케이크','별립법',3,[W,PREP,'노른자 반죽 만들기','흰자 머랭 만들기','머랭·가루 섞기','비중 측정·기록','팬닝','굽기','시트에 잼 바르기','말기',...END],
+ ['충전물은 잼','머랭과 반죽을 고르게 섞되 거품이 꺼지지 않게']),
+P('chiffon','시퐁케이크','시퐁법',3,[W,'시퐁 틀에 물 분무, 오븐 예열','노른자 반죽 (식용유·물 포함)','흰자 머랭 만들기','머랭 섞기','비중 측정·기록','팬닝','굽기','충분히 식힌 뒤 틀에서 분리',...END],
+ ['유산지 없이 굽고 손으로 떼어내야 해','가루·유지 넣는 타이밍이 다른 스펀지류보다 빨라','식히는 시간이 촉박하니 역산해서 계획']),
+P('heukmi','흑미롤케이크','공립법',5,[W,PREP,'전란·설탕 중탕하며 휘핑','쌀가루 섞기','비중 측정·기록','팬닝','굽기','생크림 손으로 휘핑','미지근할 때 크림 바르고 말기',...END],
+ ['현행 최고 난이도. 시트가 찢어지면 실격','너무 뜨겁거나 차가울 때 말면 잘 찢어져','힘을 빼고 말고, 면포에 물을 넉넉히','생크림은 기계 없이 단단하게 휘핑']),
+P('tart','타르트','크림법',4,[W,'타르트 반죽 만들기 (크림법)','반죽 냉장 휴지','충전물 만들기 (크림법), 오븐 예열','반죽 밀어 틀에 깔기','충전물 채우고 토핑','굽기',...END],
+ ['크림법을 두 번 해야 해서 체력 소모가 커','반죽은 글루텐이 덜 생기게 최소한으로 치대기']),
+P('buttercookie','버터쿠키','크림법',2,[W,'팬 준비, 오븐 예열','버터 크림화 (수작업)','계란 넣고 가루 섞기','짤주머니로 모양 짜기 (장미형·8자형)','굽기',...END],
+ ['기계 사용 불가, 손으로만','짤주머니를 오래 쥐면 손 열로 버터가 녹아','실패한 모양은 반죽에 다시 넣고 짜도 돼','크기가 균일해야 해']),
+P('muffin','초코머핀','크림법',2,[W,'머핀틀 준비, 오븐 예열','버터 크림화, 계란 조금씩','가루·초코칩 섞기','균일하게 팬닝','굽기',...END],
+ ['초코칩이 고르게 퍼지고 윗면이 갈라지면 좋아','팬닝 양을 일정하게']),
+P('shortbread','쇼트브레드쿠키','크림법',4,[W,'버터 크림화, 계란 넣기','가루 섞어 반죽','반죽 냉장 휴지, 오븐 예열','밀어 펴고 쿠키틀로 찍기','계란물 바르고 포크 무늬','굽기',...END],
+ ['손 열로 버터가 녹지 않게 빠르게','남는 반죽을 최소로, 덧가루는 적당히','포크 무늬까지 채점 대상']),
+P('choux','슈','호화법',3,[W,'팬 준비, 오븐 예열','물·버터·소금 끓이기','밀가루 넣고 호화','계란으로 되기 조절','짜기 (팬닝)','물 분무','굽기 (아랫불 먼저 세게)',...END],
+ ['공정은 단순한데 반죽 상태 판단이 전부','굽는 중간에 오븐 문 열지 않기','부풀어 갈라지고 속이 비어야 성공']),
+P('madeleine','마드레느','1단계 변형 반죽법',1,[W,'틀에 버터·밀가루 칠, 오븐 예열','가루·설탕에 계란 섞기','녹인 버터 식혀 섞기, 레몬 제스트','반죽 휴지','균일하게 팬닝','굽기',...END],
+ ['쉬운 대신 크기 균일이 득점 포인트','배꼽이 잘 올라오면 좋아']),
+P('dacquoise','다쿠와즈','머랭법',3,[W,'팬·틀 준비, 오븐 예열','단단한 머랭 만들기','아몬드가루·분당 섞기','짜기','분당 뿌리기 (여러 번)','굽기','식힌 뒤 버터크림 샌드',...END],
+ ['머랭을 단단하게','표면이 갈라지도록 분당을 여러 번 고르게']),
+P('madeira','마데라컵케이크','크림법',2,[W,'머핀틀 준비, 오븐 예열','호두 굽기·건포도 전처리','버터 크림화, 계란 조금씩','가루·과일 섞기','균일하게 팬닝','굽기','퐁당 바르고 추가로 굽기',...END],
+ ['충전물이 고르게 퍼져야 해','퐁당 바르는 타이밍 놓치지 않기']),
+P('cheese','치즈케이크','크림법 + 별립법',2,[W,'비중컵에 버터·설탕 코팅, 오븐 예열','버터·크림치즈 크림화, 노른자 넣기','우유·럼·레몬즙 넣기','약한 흰자 머랭 만들기','머랭·가루 섞기','비중 측정·기록','팬닝','중탕으로 굽기',...END],
+ ['머랭은 약하게. 세게 치면 과하게 부풀어','시험장에 따라 흰자를 손으로 쳐야 할 수도 있어','제출할 때 컵에서 깨끗하게 빠져야 해']),
+P('walnut','호두파이','블렌딩법',4,[W,'파이 반죽 (찬 버터를 가루에 섞기)','반죽 냉장 휴지','호두 굽기, 오븐 예열','충전물 만들고 거품 가라앉히기','반죽 밀어 틀에 깔고 가장자리 성형','호두·충전물 채우기','굽기',...END],
+ ['충전물 거품이 남으면 구울 때 부풀어 터져','충전물이 넘치거나 흐르지 않게']),
+P('chocoroll','초코롤케이크','공립법',3,[W,PREP,'전란·설탕 중탕하며 휘핑','가루·코코아 섞기 (뭉침 주의)','녹인 버터·우유 섞기','비중 측정·기록','팬닝','굽기','가나슈 만들기','가나슈 바르고 말기',...END],
+ ['코코아가 뭉치기 쉬우니 체 쳐서 고르게','말 때 시트가 터지지 않게'])
+];
+
+function B(opts){
+  const s=[W,'반죽 (반죽온도 측정)','1차 발효'];
+  if(opts.pre) s.push(...opts.pre);
+  s.push('분할','둥글리기','중간 발효',opts.shape||'성형');
+  if(opts.shape2) s.push(...opts.shape2);
+  s.push('팬닝','2차 발효');
+  if(opts.post) s.push(...opts.post);
+  s.push(opts.bake||'굽기');
+  if(opts.after) s.push(...opts.after);
+  s.push(...END);
+  return s;
+}
+const BREAD=[
+P('plain','식빵 (비상스트레이트법)','비상스트레이트법',1,B({shape:'성형 (삼봉형)'}),['비상스트레이트법 조건(반죽온도·발효)은 문제지 요구사항대로','반죽만 잘 나오면 가장 무난한 편']),
+P('milk','우유식빵','스트레이트법',1,B({shape:'성형 (삼봉형)'}),['토핑 없는 식빵류라 반죽 상태와 공정 순서가 핵심']),
+P('rice','쌀식빵','스트레이트법',1,B({shape:'성형'}),['토핑 없는 식빵류, 반죽 상태에 집중']),
+P('pullman','풀만식빵','스트레이트법',1,B({shape:'성형 후 뚜껑 있는 틀에 넣기'}),['뚜껑 달린 틀에서 육면체 모양을 내는 게 목표']),
+P('butterroll','버터롤','스트레이트법',2,B({shape:'번데기 모양 성형'}),['성형 크기와 모양을 일정하게']),
+P('twist','단과자빵 (트위스트형)','스트레이트법',2,B({shape:'8자형 등 꼬기 성형'}),['8자형은 연습량이 많이 필요해','모양이 일정해야 해']),
+P('bagel','베이글','스트레이트법',2,B({shape:'링 모양 성형 (구멍 넉넉히)',post:['끓는 물에 데치기']}),['구멍을 작게 만들면 구울 때 막혀서 감점','데칠 때 유산지를 빨리 떼고 앞면이 위로 오게']),
+P('grissini','그리시니','스트레이트법',3,B({shape:'가늘고 길게 밀어 성형'}),['제출 개수가 가장 많고 시간이 짧아 타임오버가 잦아','오븐 공간이 부족하면 나눠서 발효·굽기 계획을 미리 짜기']),
+P('rye','호밀빵','스트레이트법',3,B({post:['칼집 내기']}),['칼집 모양이 중요해']),
+P('wholewheat','통밀빵','스트레이트법',3,B({shape:'성형 후 오트밀 묻히기'}),['오트밀을 붙인 채로 발효']),
+P('buttertop','버터톱식빵','스트레이트법',3,B({shape:'성형',post:['윗면 칼집 내고 버터 짜기']}),['반죽이 질어서 덧가루를 잘 써야 해','표면이 울퉁불퉁하면 구운 모양에 그대로 나와']),
+P('mocha','모카빵','스트레이트법',4,B({pre:['토핑 쿠키 반죽 만들기 (크림법)'],shape:'성형 (건포도 고르게)',shape2:['토핑 반죽 밀어 덮기']}),['토핑 반죽은 휴지 후 덧가루를 넉넉히','토핑이 바닥까지 닿으면 감점되기 쉬워']),
+P('soboro','단과자빵 (소보로빵)','스트레이트법',4,B({pre:['소보로 토핑 만들기'],shape:'둥글게 성형',shape2:['물 묻혀 토핑 묻히기']}),['토핑이 고르게, 떨어지지 않게 붙이기']),
+P('sausage','소시지빵','스트레이트법',4,B({pre:['속재료 준비 (양파 썰기 등)'],shape:'소시지 감싸고 자르기 (잎·꽃 모양)',post:['토핑 올리기']}),['자를 때 끝을 조금 남기고 포개기','발효 중 소시지가 튀어나오지 않게']),
+P('chestnut','밤식빵','스트레이트법',4,B({pre:['토핑 준비'],shape:'밤 넣고 말아 성형',post:['토핑 올리기']}),['토핑 양 조절에 실패하면 배분이 틀어져']),
+P('cream','단과자빵 (크림빵)','스트레이트법',4,B({pre:['충전물 준비'],shape:'크림 넣고 성형·칼집'}),['굽다가 크림이 새면 사실상 불합격','성형 공정이 많아 시간에 쫓기기 쉬워']),
+P('redbean','단팥빵 (비상스트레이트법)','비상스트레이트법',4,B({shape:'팥앙금 싸서 성형'}),['봉합을 확실히 해서 앙금이 새지 않게']),
+P('corn','옥수수식빵','스트레이트법',5,B({shape:'성형 (삼봉형)'}),['반죽이 매우 질어서 난이도가 높아','덧가루는 필요한 만큼만, 반죽이 찢어지지 않게']),
+P('donut','빵도넛','스트레이트법',5,B({shape:'8자형·꽈배기형 성형',bake:'튀기기'}),['튀기는 시간을 꼭 남겨두기, 시간 배분 실패가 흔해','튀기다 성형이 풀리지 않게']),
+P('sweetroll','스위트롤','스트레이트법',5,B({shape:'밀어 펴고 계피설탕 뿌려 말기',shape2:['잎 모양 등으로 자르기']}),['늘려가며 말다가 찢어지기 쉬워','2차 발효가 길어지면 말린 부분이 튀어나와'])
+];
+const CATS={pastry:{label:'제과',items:PASTRY},bread:{label:'제빵',items:BREAD}};
+const findItem=(cat,id)=>CATS[cat].items.find(i=>i.id===id);
+
+/* ---------- 단계별 상세 ---------- */
+const RULES=[
+[/재료 계량/,c=>['저울에 빈 용기를 올리고 영점(0)을 맞춘 뒤 달기','재료마다 따로 담아 배합표 순서대로 늘어놓기. 감독관이 확인하기 쉬워야 해','다 달면 배합표와 한 줄씩 대조해서 빠지거나 잘못 단 재료가 없는지 확인','흘린 재료는 바로 닦고, 계량 시간 안에 끝내는 게 우선',
+  ...(c==='bread'?['이스트와 소금은 서로 닿지 않게 따로 두기','물은 반죽온도를 맞출 수 있게 온도를 조절해서 준비']:['버터·크림치즈 같은 유지는 계량해두면 크림화 전까지 실온에서 부드러워져'])]],
+[/틀.*(준비|칠|분무|코팅)|팬 준비|팬·틀|오븐 예열|유산지 재단/,()=>['품목에 맞게 틀 준비 (유산지 깔기, 기름칠, 물 분무 등)','오븐은 굽기 온도로 미리 예열','반죽이 끝나자마자 팬닝할 수 있게 먼저 해두기']],
+[/크림화/,()=>['버터(또는 크림치즈)를 먼저 부드럽게 풀기','설탕·소금은 나눠 넣으며 색이 밝고 가벼워질 때까지']],
+[/계란 조금씩|계란 넣/,()=>['계란은 조금씩 나눠 넣고 매번 완전히 섞은 뒤 다음 것 넣기','한 번에 넣으면 버터와 분리돼 반죽이 몽글몽글해져']],
+[/중탕하며 휘핑/,()=>['계란·설탕을 중탕으로 따뜻하게 데우며 설탕 녹이기','과열되면 계란이 익으니 온도계로 확인','중탕에서 내려 색이 밝아지고, 떨어뜨린 반죽 자국이 잠시 남을 때까지 휘핑']],
+[/중탕으로 녹이기/,()=>['볼 바닥이 끓는 물에 직접 닿지 않게','초콜릿은 과열되지 않게 저으며 녹이기']],
+[/머랭 만들기/,()=>['볼과 거품기에 기름기나 노른자가 없어야 해','거품이 생긴 뒤 설탕을 나눠 넣기','품목에 맞는 단단함까지. 치즈케이크는 약하게, 다쿠와즈는 단단하게']],
+[/머랭.*섞|머랭 섞/,()=>['머랭은 한 번에 넣지 말고 나눠서','주걱으로 바닥에서 위로 가르듯 섞어 거품 살리기','덩어리가 없게, 하지만 과하게 섞으면 비중이 올라가']],
+[/노른자 반죽|노른자 넣기/,()=>['노른자에 설탕을 넣고 색이 밝아질 때까지 젓기','액체 재료는 나눠 넣어 고르게']],
+[/가루.*섞|쌀가루 섞/,()=>['가루는 체에 쳐서 덩어리 없이','주걱으로 가볍게, 필요 이상 섞지 않기','볼 바닥에 가루가 남지 않았는지 확인']],
+[/녹인 버터/,()=>['버터는 미리 녹여 따뜻하게 두기','반죽 일부와 먼저 섞은 뒤 본반죽에 넣으면 바닥에 가라앉지 않아']],
+[/비중/,()=>['같은 컵에 물과 반죽을 각각 가득 채워 무게를 재','비중 = 반죽 무게 ÷ 같은 부피의 물 무게','측정값을 답안에 기록']],
+[/팬닝/,()=>['정해진 양과 개수대로 균일하게','틀에 넣은 반죽은 윗면을 평평하게 고르기','제빵은 발효·굽기로 커질 걸 생각해 간격 넉넉히']],
+[/^굽기|중탕으로 굽기|추가로 굽기/,()=>['넣은 시각을 기록해두기','중간에 색을 보고 팬 방향을 바꿔 고르게','색·탄력 등으로 다 익었는지 확인한 뒤 꺼내기']],
+[/말기/,()=>['유산지를 조심해서 떼기','처음을 단단히 말고 끝까지 일정한 힘으로','이음매가 아래로 가게 두기']],
+[/잼 바르기|크림 바르고|가나슈 바르고/,()=>['끝부분은 조금 남기고 고르게 펴 바르기','말기 시작하는 쪽에 얕게 칼집을 내면 말기 쉬워']],
+[/가나슈 만들기/,()=>['데운 생크림을 초콜릿에 붓고 저어 녹이기','바르기 좋은 되기까지 식히기']],
+[/생크림 손으로/,()=>['볼을 차갑게 하면 빨리 올라와','단단하게 휘핑해야 말았을 때 무너지지 않아']],
+[/휴지/,()=>['비닐로 싸서 마르지 않게','휴지하는 동안 충전물 같은 다음 작업을 진행해 시간 아끼기']],
+[/전처리|견과류 미리|호두 굽기/,()=>['견과류는 오븐에 살짝 구워 향 내기','건과일은 씻거나 불린 뒤 물기를 충분히 빼기','썰어야 하는 재료는 크기를 일정하게']],
+[/끓이기/,()=>['물·버터·소금을 함께 끓여 버터를 완전히 녹이기']],
+[/호화/,()=>['불 위에서 밀가루를 한 번에 넣고 빠르게 저어 익히기','바닥에 얇은 막이 생길 정도까지']],
+[/되기 조절/,()=>['계란은 조금씩 넣으며 되기 확인','주걱으로 들었을 때 매끈하게 늘어지며 떨어지는 정도']],
+[/짜기/,()=>['짤주머니는 손 열이 덜 가게 조금씩 채우기','크기와 간격을 일정하게']],
+[/분당 뿌리기/,()=>['체로 고르게 뿌리고, 녹아들면 다시 뿌리기']],
+[/물 분무/,()=>['굽기 전 반죽 표면에 물을 고르게 뿌리기']],
+[/퐁당/,()=>['굽기 막바지에 꺼내 퐁당을 바르고 다시 넣어 말리듯 굽기']],
+[/샌드/,()=>['완전히 식힌 뒤 크림을 짜고 크기가 맞는 두 장을 맞붙이기']],
+[/칼집/,()=>['일정한 깊이로 망설이지 말고 한 번에']],
+[/쿠키틀|밀어 펴고/,()=>['일정한 두께로 밀기','덧가루는 적당히, 남는 반죽이 적게 찍기']],
+[/계란물/,()=>['얇고 고르게 바르기']],
+[/파이 반죽/,()=>['버터를 차가운 상태로 잘게 잘라 가루와 섞기','반죽은 뭉칠 정도로만']],
+[/충전물 (준비|만들)|토핑 준비|토핑 만들기|토핑 쿠키|속재료|크림 준비/,()=>['발효나 휴지 시간 동안 준비하면 시간 절약','개수에 맞게 미리 나눠두기']],
+[/반죽 \(반죽온도/,()=>['재료 넣는 순서와 믹싱 정도는 공개문제 요구대로','유지는 반죽이 한 덩어리로 뭉친 뒤(클린업 단계) 넣기','반죽을 얇게 늘렸을 때 막이 생기는지 확인','반죽온도를 재서 요구 온도와 비교']],
+[/1차 발효/,()=>['요구된 온도·습도에 맞추기','부피가 커지고, 손가락으로 찔렀을 때 자국이 그대로 남으면 적당']],
+[/^분할/,()=>['요구된 무게대로 저울로 빠르게','여러 번 떼었다 붙이지 않게']],
+[/둥글리기/,()=>['표면이 매끄럽게 되도록 둥글게, 이음매는 아래로']],
+[/중간 발효/,()=>['마르지 않게 덮어서 잠깐 두기. 반죽이 풀려 성형이 쉬워져']],
+[/성형|말아|싸서|감싸|꼬기/,(c)=>c==='bread'?['공개문제의 모양 요구대로','가스를 빼고 이음매를 단단히 봉하기','크기와 모양을 일정하게']:[]],
+[/2차 발효/,()=>['요구된 온도·습도에서','부피나 틀 높이 기준으로 판단, 과발효 주의']],
+[/데치기/,()=>['끓는 물에 앞뒤로 짧게','유산지는 빨리 떼고 앞면이 위로 오게 팬닝']],
+[/튀기기/,()=>['기름 온도를 확인하고 한 번에 너무 많이 넣지 않기','앞뒤 색이 고르게 뒤집기']],
+[/오트밀/,()=>['표면에 물을 묻혀 오트밀을 고르게 붙이기']],
+[/덮기/,()=>['휴지한 토핑 반죽을 밀어 빵을 덮되 바닥까지 닿지 않게']],
+[/물 묻혀 토핑/,()=>['표면에 물을 묻히고 토핑을 눌러 고르게 붙이기']],
+[/자르기/,()=>['끝을 조금 남기고 잘라 모양 잡기','간격을 일정하게']],
+[/버터 짜기/,()=>['칼집 사이에 버터를 가늘게 짜기']],
+[/토핑 올리기/,()=>['양을 고르게 나눠 올리기']],
+[/^제출/,()=>['요구 개수를 확인하고 모양 좋은 것 위주로 정렬해 제출']],
+[/정리/,()=>['작업대·도구 설거지와 정리까지 채점 대상','쓰레기는 분리해서 버리기']]
+];
+function recipeOf(cat,id){return (S.prefs.recipes&&S.prefs.recipes[cat+':'+id])||'';}
+function parseRecipe(t){return t.split(/\n/).map(l=>l.trim()).filter(Boolean).map(l=>{
+  const m=l.match(/^(.+?)[\s:]+([\d.,]+\s*(?:g|kg|ml|개|%)?)\s*$/i);return m?{n:m[1].trim(),a:m[2]}:{n:l,a:''};});}
+function detailHTML(name,cat,id,live,idx){
+  let b=[];RULES.forEach(([re,f])=>{if(re.test(name))b.push(...f(cat));});
+  b=[...new Set(b)];
+  let h=b.length?'<ul>'+b.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'<p class="sub" style="margin:0">공개문제 요구사항대로 진행해.</p>';
+  if(/재료 계량/.test(name)){
+    const rs=parseRecipe(recipeOf(cat,id));
+    if(!rs.length){h+='<p class="sub">배합표를 입력하면 여기서 재료별로 체크하면서 계량할 수 있어. 과제 준비 화면의 배합표 칸에 넣어줘.</p>';}
+    else if(live){const w=S.active.weighed||[];
+      h+='<p class="sub">계량 체크 ('+w.filter(Boolean).length+'/'+rs.length+')</p><div class="wlist">'+rs.map((r,i)=>'<label class="'+(w[i]?'got':'')+'"><input type="checkbox" data-wi="'+i+'" '+(w[i]?'checked':'')+'><span>'+esc(r.n)+'</span><span class="amt">'+esc(r.a)+'</span></label>').join('')+'</div>';}
+    else{h+='<p class="sub">내 배합표</p><div class="wlist">'+rs.map(r=>'<label><span>'+esc(r.n)+'</span><span class="amt">'+esc(r.a)+'</span></label>').join('')+'</div>';}
+  }
+  if(/비중/.test(name)){
+    h+='<p class="sub">비중 계산기 (g)</p><div class="bjcalc"><label><span>빈 컵</span><input type="number" inputmode="decimal" data-bj="c"></label><label><span>컵+물</span><input type="number" inputmode="decimal" data-bj="w"></label><label><span>컵+반죽</span><input type="number" inputmode="decimal" data-bj="d"></label></div><div class="bjout">비중 -</div>';
+  }
+  return h;
+}
+function stepsList(steps,openIdx,cat,id,live,rowInfo){
+  return '<ol class="steps">'+steps.map((nm,i)=>{const r=rowInfo?rowInfo(i):{cls:'',tm:''};const op=openIdx===i;
+    return '<li class="'+r.cls+'"><button class="sh" data-act="open" data-i="'+i+'" aria-expanded="'+op+'"><span class="sn">'+esc(nm)+'</span><span class="st">'+r.tm+' <span class="chev">▶</span></span></button>'+(op?'<div class="sd">'+detailHTML(nm,cat,id,live,i)+'</div>':'')+'</li>';}).join('')+'</ol>';
+}
+
+/* ---------- 저장 ---------- */
+const KEY='bake-practice-v1';
+function load(){try{const v=localStorage.getItem(KEY);return v?JSON.parse(v):null;}catch(e){return null;}}
+const S=Object.assign({cat:'pastry',prefs:{sound:true,fresh:true,times:{}},history:[],active:null,view:'home',prepId:null},load()||{});
+S.prefs=Object.assign({sound:true,fresh:true,times:{}},S.prefs||{});
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+
+/* ---------- 유틸 ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function fmt(ms){const neg=ms<0;ms=Math.abs(ms);const t=Math.floor(ms/1000),h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60;
+  const p=n=>String(n).padStart(2,'0');return (neg?'+':'')+(h?h+':'+p(m):p(m))+':'+p(s);}
+function mins(ms){const m=Math.round(ms/60000);return m>=60?Math.floor(m/60)+'시간 '+(m%60)+'분':m+'분';}
+const dots=d=>'<span class="dots" aria-label="난이도 '+d+'/5">'+[1,2,3,4,5].map(i=>'<i class="'+(i<=d?'on':'')+'"></i>').join('')+'</span>';
+function countFor(cat,id){return S.history.filter(h=>h.cat===cat&&h.itemId===id).length;}
+function timesFor(cat,id){const t=S.prefs.times[cat+':'+id];return t||{total:cat==='bread'&&id==='grissini'?150:180,weigh:10};}
+
+/* ---------- 소리·진동·화면유지 ---------- */
+let ac=null,wl=null;
+function initAudio(){try{if(!ac)ac=new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();}catch(e){}}
+function alertUser(n){
+  try{navigator.vibrate&&navigator.vibrate(n>1?[300,150,300,150,300]:[250,120,250]);}catch(e){}
+  if(!S.prefs.sound||!ac)return;
+  for(let i=0;i<n+1;i++){const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=880;o.connect(g);g.connect(ac.destination);
+    const t=ac.currentTime+i*0.35;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.3,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+0.25);o.start(t);o.stop(t+0.3);}
+}
+async function wake(){try{if('wakeLock' in navigator&&!wl){wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>{wl=null;});}}catch(e){}}
+function unwake(){try{wl&&wl.release();}catch(e){}wl=null;}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.active&&!S.active.pauseStart)wake();});
+
+/* ---------- 세션 ---------- */
+function elapsed(a){const now=Date.now();return now-a.startAt-a.pausedMs-(a.pauseStart?now-a.pauseStart:0);}
+function startSession(cat,id){
+  const it=findItem(cat,id),t=timesFor(cat,id);
+  S.active={cat,itemId:id,startAt:Date.now(),pausedMs:0,pauseStart:null,totalMin:t.total,weighMin:t.weigh,
+    steps:it.steps.map(n=>({name:n,at:null})),fired:[],open:0,weighed:[]};
+  S.view='run';save();initAudio();wake();render();
+}
+function curIdx(a){return a.steps.findIndex(s=>s.at===null);}
+
+/* ---------- 화면 ---------- */
+function setTabs(){document.querySelectorAll('#tabs button').forEach(b=>{
+  const on=(b.dataset.tab==='history')===(S.view==='history');b.setAttribute('aria-current',on?'true':'false');});}
+
+function viewHome(){
+  const items=CATS[S.cat].items;
+  return `
+  <div class="seg" role="group" aria-label="종목">
+    ${Object.entries(CATS).map(([k,v])=>`<button data-act="cat" data-cat="${k}" aria-pressed="${S.cat===k}">${v.label}기능사</button>`).join('')}
+  </div>
+  <button class="draw" data-act="draw"><strong>오늘의 과제 뽑기</strong><span>시험처럼 20개 품목 중 하나를 무작위로 골라줘</span></button>
+  <label class="opt"><input type="checkbox" data-act="fresh" ${S.prefs.fresh?'checked':''}> 연습 횟수가 적은 품목에서 우선 뽑기</label>
+  <h2>품목 직접 고르기</h2>
+  <div class="list">
+    ${items.map(it=>{const c=countFor(S.cat,it.id);return `<button class="row" data-act="pick" data-id="${it.id}">
+      <span><span class="nm">${esc(it.name)}</span><br><span class="mt">${esc(it.m)}</span></span>
+      <span class="right">${dots(it.d)}<span class="cnt ${c?'':'zero'}">${c?c+'회':'미연습'}</span></span></button>`;}).join('')}
+  </div>`;
+}
+
+function viewPrep(){
+  const it=findItem(S.cat,S.prepId),t=timesFor(S.cat,it.id);
+  return `
+  <div class="card">
+    <p class="item-title">${esc(it.name)}</p>
+    <div class="meta"><span>${CATS[S.cat].label}</span><span>${esc(it.m)}</span>${dots(it.d)}<span>${countFor(S.cat,it.id)}회 연습</span></div>
+    <ul class="tips">${it.tips.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+  </div>
+  <div class="card">
+    <div class="fields">
+      <div class="field"><label for="tt">시험시간 (분)</label><input id="tt" type="number" inputmode="numeric" min="30" max="300" value="${t.total}"></div>
+      <div class="field"><label for="tw">계량시간 (분)</label><input id="tw" type="number" inputmode="numeric" min="1" max="30" value="${t.weigh}"></div>
+    </div>
+    <p class="note">품목마다 시험시간이 달라. 큐넷 공개문제에 적힌 시간으로 한 번 맞춰두면 다음부터 기억해둘게.</p>
+    <label class="opt" style="margin:12px 0 0"><input type="checkbox" data-act="sound" ${S.prefs.sound?'checked':''}> 알림음 켜기 (진동은 항상)</label>
+  </div>
+  <div class="card recipe">
+    <h2>배합표</h2>
+    <p class="note" style="margin:0 0 8px">공개문제 배합표를 보고 한 줄에 재료 하나씩 적어둬. 계량 단계에서 체크리스트로 쓸 수 있어.</p>
+    <textarea id="recipe" data-act="recipe" placeholder="재료이름 무게&#10;예) 재료A 000g&#10;예) 재료B 00g">${esc(recipeOf(S.cat,it.id))}</textarea>
+  </div>
+  <div class="card" style="padding:4px 0;overflow:hidden">
+    <h2 style="padding:12px 14px 0">공정 미리 보기 <span style="font-size:.8rem">(단계를 누르면 설명)</span></h2>
+    ${stepsList(it.steps,S.prepOpen,S.cat,it.id,false)}
+  </div>
+  <div class="btns">
+    <button class="btn primary" data-act="start">연습 시작</button>
+    <div class="btns two" style="margin:0"><button class="btn ghost" data-act="draw">다시 뽑기</button><button class="btn ghost" data-act="home">목록으로</button></div>
+  </div>`;
+}
+
+function viewRun(){
+  const a=S.active,it=findItem(a.cat,a.itemId),ci=curIdx(a);
+  const tms=[];let prev=0;a.steps.forEach(s=>{if(s.at!==null){tms.push(fmt(s.at-prev));prev=s.at;}else tms.push('');});
+  const rows=stepsList(a.steps.map(s=>s.name),a.open,a.cat,a.itemId,true,i=>({cls:a.steps[i].at!==null?'done':(i===ci?'cur':''),tm:tms[i]}));
+  const r=88,C=2*Math.PI*r;
+  return `
+  <p class="run-name">${esc(it.name)}</p>
+  <div class="dialbox" id="dial">
+    <svg viewBox="0 0 200 200" aria-hidden="true">
+      <circle class="dial-bg" cx="100" cy="100" r="${r}" fill="none" stroke-width="10"/>
+      <circle class="dial-fg" id="arc" cx="100" cy="100" r="${r}" fill="none" stroke-width="10" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="0"/>
+    </svg>
+    <div class="dial-center"><div class="dial-time" id="remain" role="timer">--:--</div><div class="dial-sub" id="elap"></div></div>
+  </div>
+  ${a.pauseStart?'<p class="paused-flag">일시정지됨</p>':''}
+  <div class="weigh" id="weigh" ${a.steps[0].at!==null?'hidden':''}><span>계량 남은 시간</span><b id="wt">--:--</b></div>
+  <p class="note" style="margin:0 0 6px">단계를 누르면 방법이 펼쳐져.</p><div class="card" style="padding:4px 0;overflow:hidden">${rows}</div>
+  ${ci>=0?`<button class="btn stepbtn" data-act="next">「${esc(a.steps[ci].name)}」 완료</button>`:''}
+  <div class="btns two">
+    <button class="btn ghost" data-act="undo" ${a.steps[0].at===null?'disabled':''}>한 단계 되돌리기</button>
+    <button class="btn ghost" data-act="pause">${a.pauseStart?'다시 시작':'일시정지'}</button>
+  </div>
+  <div class="btns"><button class="btn danger" data-act="finish">연습 끝내기</button></div>
+  <details class="card" style="margin-top:14px"><summary>이 품목 주의할 점</summary><ul class="tips">${it.tips.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></details>`;
+}
+
+function viewResult(){
+  const a=S.active,it=findItem(a.cat,a.itemId),used=a.endAt,limit=a.totalMin*60000,over=used>limit;
+  let prev=0;const durs=a.steps.filter(s=>s.at!==null).map(s=>{const d=s.at-prev;prev=s.at;return {name:s.name,d};});
+  const max=Math.max(1,...durs.map(x=>x.d));
+  const checks=['시간 안에 완성','모양·크기 균일','굽기 색 적당','공정 순서 안 틀림','위생·정리'];
+  return `
+  <div class="card">
+    <p class="item-title">${esc(it.name)}</p>
+    <div class="bigstat ${over?'over':''}">${fmt(used)}</div>
+    <p class="note" style="margin-top:4px">제한 ${a.totalMin}분 중 ${over?'<b style="color:var(--alarm)">'+mins(used-limit)+' 초과</b>':mins(limit-used)+' 남기고 끝냄'} · 완료 단계 ${durs.length}/${a.steps.length}</p>
+  </div>
+  <div class="card"><h2>단계별 걸린 시간</h2><div class="bars">
+    ${durs.length?durs.map(x=>`<div class="b"><span>${esc(x.name)}</span><span>${fmt(x.d)}</span><div class="track"><div class="fill" style="width:${Math.max(3,x.d/max*100)}%"></div></div></div>`).join(''):'<p class="note">완료한 단계가 없어.</p>'}
+  </div></div>
+  <div class="card"><h2>스스로 체크</h2><div class="checks">
+    ${checks.map((c,i)=>`<label><input type="checkbox" class="ck" data-i="${i}" ${i===0&&!over&&durs.length===a.steps.length?'checked':''}> ${c}</label>`).join('')}
+  </div>
+  <label for="memo" class="note" style="display:block;margin:10px 0 6px">메모 (다음에 고칠 점)</label>
+  <textarea id="memo" placeholder="예: 머랭 너무 오래 쳐서 비중 높게 나옴"></textarea></div>
+  <div class="btns"><button class="btn primary" data-act="saveRes">기록 저장</button><button class="btn ghost" data-act="discard">저장하지 않고 나가기</button></div>`;
+}
+
+function viewHistory(){
+  const cov=Object.entries(CATS).map(([k,v])=>{const done=v.items.filter(i=>countFor(k,i.id)>0).length;
+    return `<h2 style="margin-top:6px">${v.label} 연습 현황 (${done}/${v.items.length})</h2><div class="grid" style="margin-bottom:16px">
+      ${v.items.map(i=>{const c=countFor(k,i.id);return `<div class="${c?'':'zero'}"><b>${c}</b>${esc(i.name)}</div>`;}).join('')}</div>`;}).join('');
+  const list=S.history.length?`<div class="list hist">${S.history.slice().reverse().map(h=>{
+    const over=h.usedMs>h.limitMin*60000,d=new Date(h.date),ok=h.checks.filter(Boolean).length;
+    return `<div class="row"><div class="l1"><span class="nm">${esc(h.name)}</span><span class="pill ${over?'bad':''}">${over?'시간 초과':'시간 내'}</span></div>
+      <span class="mt">${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')} · ${fmt(h.usedMs)} / ${h.limitMin}분 · 체크 ${ok}/${h.checks.length}</span>
+      ${h.memo?`<span class="memo">${esc(h.memo)}</span>`:''}</div>`;}).join('')}</div>
+    <div class="btns"><button class="btn danger" data-act="clear">기록 모두 지우기</button></div>`
+    :`<div class="card empty">아직 기록이 없어. 과제를 하나 뽑아서 첫 연습을 해봐.</div>`;
+  return cov+'<h2>최근 연습</h2>'+list;
+}
+
+function render(keep){
+  if(S.active&&S.view!=='run'&&S.view!=='result'&&S.active.endAt===undefined)S.view='run';
+  const v=S.view;
+  const html=v==='prep'?viewPrep():v==='run'?viewRun():v==='result'?viewResult():v==='history'?viewHistory():viewHome();
+  const y=window.scrollY;$('#app').innerHTML=html;setTabs();tick();window.scrollTo(0,keep?y:0);
+}
+
+/* ---------- 타이머 ---------- */
+function tick(){
+  const a=S.active;if(!a||S.view!=='run')return;
+  const el=elapsed(a),limit=a.totalMin*60000,rem=limit-el;
+  const r=$('#remain');if(!r)return;
+  r.textContent=fmt(rem);
+  $('#elap').textContent='경과 '+fmt(el)+' · 제한 '+a.totalMin+'분';
+  const C=2*Math.PI*88,frac=Math.max(0,Math.min(1,rem/limit));
+  $('#arc').setAttribute('stroke-dashoffset',String(C*(1-frac)));
+  $('#dial').classList.toggle('over',rem<0);
+  if(a.steps[0].at===null){const wr=a.weighMin*60000-el;$('#wt').textContent=fmt(wr);$('#weigh').classList.toggle('late',wr<0);
+    if(wr<=0&&!a.fired.includes('w')){a.fired.push('w');save();alertUser(1);}}
+  [[30,'30'],[10,'10'],[0,'0']].forEach(([m,k])=>{if(rem<=m*60000&&limit>m*60000&&!a.fired.includes(k)){a.fired.push(k);save();alertUser(m===0?2:1);}});
+}
+setInterval(tick,250);
+
+/* ---------- 이벤트 ---------- */
+function draw(){
+  const items=CATS[S.cat].items;let pool=items;
+  if(S.prefs.fresh){const mn=Math.min(...items.map(i=>countFor(S.cat,i.id)));pool=items.filter(i=>countFor(S.cat,i.id)===mn);}
+  const pick=pool[Math.floor(Math.random()*pool.length)];
+  const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduce){S.prepId=pick.id;S.prepOpen=null;S.view='prep';save();render();return;}
+  $('#app').innerHTML='<div class="card shuffle" id="sh" aria-live="polite"></div>';
+  let n=0;const iv=setInterval(()=>{const r=items[Math.floor(Math.random()*items.length)];$('#sh').textContent=r.name;
+    if(++n>12){clearInterval(iv);$('#sh').textContent=pick.name;setTimeout(()=>{S.prepId=pick.id;S.prepOpen=null;S.view='prep';save();render();},450);}},70);
+}
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-tab],[data-act]');if(!t)return;
+  if(t.dataset.tab){if(S.active&&S.active.endAt===undefined){S.view='run';}else{S.view=t.dataset.tab;}save();render();return;}
+  const act=t.dataset.act;
+  if(act==='cat'){S.cat=t.dataset.cat;save();render();}
+  else if(act==='draw'){draw();}
+  else if(act==='pick'){S.prepId=t.dataset.id;S.prepOpen=null;S.view='prep';save();render();}
+  else if(act==='home'){S.view='home';save();render();}
+  else if(act==='open'){const i=+t.dataset.i;
+    if(S.view==='run'){S.active.open=S.active.open===i?null:i;}else{S.prepOpen=S.prepOpen===i?null:i;}save();render(true);}
+  else if(act==='start'){
+    const tt=Math.max(30,Math.min(300,parseInt($('#tt').value)||180)),tw=Math.max(1,Math.min(30,parseInt($('#tw').value)||10));
+    S.prefs.times[S.cat+':'+S.prepId]={total:tt,weigh:tw};startSession(S.cat,S.prepId);}
+  else if(act==='next'){const a=S.active,i=curIdx(a);if(i<0)return;a.steps[i].at=elapsed(a);
+    if(curIdx(a)<0){a.endAt=elapsed(a);S.view='result';unwake();}else{a.open=curIdx(a);}save();render(S.view==='run');
+    if(S.view==='run'){const c=document.querySelector('li.cur');c&&c.scrollIntoView({block:'center',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}}
+  else if(act==='undo'){const a=S.active;let i=curIdx(a);i=i<0?a.steps.length-1:i-1;if(i>=0){a.steps[i].at=null;save();render();}}
+  else if(act==='pause'){const a=S.active;if(a.pauseStart){a.pausedMs+=Date.now()-a.pauseStart;a.pauseStart=null;wake();}else{a.pauseStart=Date.now();unwake();}save();render();}
+  else if(act==='finish'){if(confirm('지금까지 기록으로 연습을 끝낼까?')){const a=S.active;a.endAt=elapsed(a);if(a.pauseStart){a.pausedMs+=Date.now()-a.pauseStart;a.pauseStart=null;}S.view='result';unwake();save();render();}}
+  else if(act==='saveRes'){const a=S.active,it=findItem(a.cat,a.itemId);let prev=0;
+    S.history.push({date:Date.now(),cat:a.cat,itemId:a.itemId,name:it.name,limitMin:a.totalMin,usedMs:a.endAt,
+      steps:a.steps.filter(s=>s.at!==null).map(s=>{const d=s.at-prev;prev=s.at;return {name:s.name,d};}),
+      checks:[...document.querySelectorAll('.ck')].map(c=>c.checked),memo:$('#memo').value.trim()});
+    S.active=null;S.view='history';save();render();}
+  else if(act==='discard'){if(confirm('이번 연습 기록을 버릴까?')){S.active=null;S.view='home';save();render();}}
+  else if(act==='clear'){if(confirm('연습 기록을 전부 지울까? 되돌릴 수 없어.')){S.history=[];save();render();}}
+});
+document.addEventListener('input',e=>{
+  const el=e.target;
+  if(el.dataset.act==='recipe'){S.prefs.recipes=S.prefs.recipes||{};S.prefs.recipes[S.cat+':'+S.prepId]=el.value;save();}
+  if(el.dataset.bj){const box=el.closest('.sd'),v=k=>parseFloat(box.querySelector('[data-bj="'+k+'"]').value);
+    const c=v('c'),w=v('w'),d=v('d'),out=box.querySelector('.bjout');
+    out.textContent=(isFinite(c)&&isFinite(w)&&isFinite(d)&&w>c)?'비중 '+((d-c)/(w-c)).toFixed(2):'비중 -';}
+});
+document.addEventListener('change',e=>{
+  if(e.target.dataset.wi!==undefined&&S.active){const i=+e.target.dataset.wi;S.active.weighed=S.active.weighed||[];S.active.weighed[i]=e.target.checked;save();render(true);return;}
+  const act=e.target.dataset.act;
+  if(act==='fresh'){S.prefs.fresh=e.target.checked;save();}
+  if(act==='sound'){S.prefs.sound=e.target.checked;save();if(e.target.checked)initAudio();}
+});
+if(S.active&&!S.active.pauseStart&&S.active.endAt===undefined)wake();
+render();
+})();
+</script>
+</body>
+</html>
